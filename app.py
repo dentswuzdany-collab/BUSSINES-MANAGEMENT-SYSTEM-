@@ -888,3 +888,695 @@ def edit_product(product_id):
 
             <label>Product name</label>
             <input name="item" value="{{ p.item }}" required>
+
+            <label>Buying price per unit (UGX)</label>
+            <input type="number" step="0.01" min="0"
+                   name="price" value="{{ p.unit_price }}" required>
+
+            <label>Low-stock alert level</label>
+            <input type="number" min="0"
+                   name="low" value="{{ p.low_stock_level }}" required>
+
+            <button class="btn">Update product</button>
+
+        </form>
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+            item = request.form.get("item", "").strip()
+
+            if not item:
+                raise ValueError("Product name is required.")
+
+            price = number("price")
+            low = number("low", 0, True)
+
+            db.execute("""
+                UPDATE stock
+                SET item=?, unit_price=?,
+                    total_amount=initial_quantity*?,
+                    low_stock_level=?
+                WHERE id=?
+            """, (item, price, price, low, product_id))
+
+            db.commit()
+
+            flash("Product updated.", "success")
+
+            return redirect(url_for("inventory"))
+
+        except ValueError as exc:
+            flash(str(exc), "error")
+
+    return page("Edit product", body, p=product)
+
+# ==================== SALES ====================
+
+@app.route("/sales/add", methods=["GET", "POST"])
+@admin_required
+def record_sale():
+
+    db = get_db()
+
+    products = db.execute("""
+        SELECT id,item,remaining_quantity,unit_price
+        FROM stock ORDER BY item
+    """).fetchall()
+
+    body = """
+    <div class="panel">
+        <h1>Record sale</h1>
+
+        <form method="post">
+
+            <label>Product</label>
+
+            <select name="stock_id" required>
+                {% for p in products %}
+                <option value="{{ p.id }}">
+                    {{ p.item }} — {{ p.remaining_quantity }} available
+                    — {{ money(p.unit_price) }} buying price
+                </option>
+                {% endfor %}
+            </select>
+
+            <label>Quantity sold</label>
+            <input type="number" name="quantity" min="1" required>
+
+            <label>Selling price per unit (UGX)</label>
+            <input type="number" name="selling_price"
+                   min="0" step="0.01" required>
+
+            <button class="btn">Save sale</button>
+
+        </form>
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+            pid = number("stock_id", 1, True)
+            qty = number("quantity", 1, True)
+            sell = number("selling_price")
+
+            product = db.execute(
+                "SELECT * FROM stock WHERE id=?",
+                (pid,)
+            ).fetchone()
+
+            if not product:
+                raise ValueError("Selected product does not exist.")
+
+            if qty > product["remaining_quantity"]:
+                raise ValueError(
+                    f"Only {product['remaining_quantity']} units are available."
+                )
+
+            buy = product["unit_price"]
+
+            revenue = qty * sell
+            cost = qty * buy
+
+            db.execute("""
+                UPDATE stock
+                SET remaining_quantity=remaining_quantity-?
+                WHERE id=? AND remaining_quantity>=?
+            """, (qty, pid, qty))
+
+            if db.execute("SELECT changes()").fetchone()[0] != 1:
+                raise ValueError("Stock changed; sale was not saved.")
+
+            db.execute("""
+                INSERT INTO sales(
+                    stock_id,item,quantity_sold,buying_price,
+                    selling_price,revenue,cost,profit_loss,sale_date
+                )
+                VALUES(?,?,?,?,?,?,?,?,?)
+            """, (
+                pid,
+                product["item"],
+                qty,
+                buy,
+                sell,
+                revenue,
+                cost,
+                revenue - cost,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ))
+
+            db.commit()
+
+            flash(
+                f"Sale saved. Revenue {money(revenue)}; "
+                f"profit/loss {money(revenue-cost)}.",
+                "success"
+            )
+
+            return redirect(url_for("sales_history"))
+
+        except ValueError as exc:
+            db.rollback()
+            flash(str(exc), "error")
+
+    return page("Record sale", body, products=products)
+
+@app.route("/sales")
+@admin_required
+def sales_history():
+
+    rows = get_db().execute("""
+        SELECT * FROM sales
+        ORDER BY id DESC LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Sales history</h1>
+
+    <div class="table-wrap">
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Revenue</th>
+            <th>Cost</th>
+            <th>Profit / loss</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.sale_date }}</td>
+            <td>{{ r.item }}</td>
+            <td>{{ r.quantity_sold }}</td>
+            <td>{{ money(r.revenue) }}</td>
+            <td>{{ money(r.cost) }}</td>
+            <td>{{ money(r.profit_loss) }}</td>
+        </tr>
+
+        {% else %}
+        <tr><td colspan="6">No sales recorded.</td></tr>
+        {% endfor %}
+
+    </table>
+    </div>
+    """
+
+    return page("Sales history", body, rows=rows)
+
+# ==================== DELIVERIES ====================
+
+@app.route("/deliveries")
+@admin_required
+def deliveries():
+
+    rows = get_db().execute("""
+        SELECT * FROM deliveries
+        ORDER BY id DESC LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Stock delivery history</h1>
+
+    <a class="btn" href="/deliveries/add">Record delivery</a>
+
+    <div class="table-wrap">
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Buying price</th>
+            <th>Total cost</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.delivery_date }}</td>
+            <td>{{ r.item }}</td>
+            <td>{{ r.quantity_received }}</td>
+            <td>{{ money(r.buying_price) }}</td>
+            <td>{{ money(r.total_cost) }}</td>
+        </tr>
+
+        {% else %}
+        <tr><td colspan="5">No deliveries recorded.</td></tr>
+        {% endfor %}
+
+    </table>
+    </div>
+    """
+
+    return page("Deliveries", body, rows=rows)
+
+@app.route("/deliveries/add", methods=["GET", "POST"])
+@admin_required
+def add_delivery():
+
+    db = get_db()
+
+    products = db.execute("""
+        SELECT id,item,remaining_quantity,unit_price
+        FROM stock ORDER BY item
+    """).fetchall()
+
+    body = """
+    <div class="panel">
+        <h1>Record stock delivery</h1>
+
+        <form method="post">
+
+            <label>Product</label>
+
+            <select name="stock_id" required>
+                {% for p in products %}
+                <option value="{{ p.id }}">
+                    {{ p.item }} — current stock {{ p.remaining_quantity }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <label>Quantity received</label>
+            <input type="number" name="quantity" min="1" required>
+
+            <label>Buying price per delivered unit (UGX)</label>
+            <input type="number" step="0.01" min="0"
+                   name="price" required>
+
+            <button class="btn">Save delivery</button>
+
+        </form>
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+            pid = number("stock_id", 1, True)
+            qty = number("quantity", 1, True)
+            price = number("price")
+
+            p = db.execute(
+                "SELECT * FROM stock WHERE id=?",
+                (pid,)
+            ).fetchone()
+
+            if not p:
+                raise ValueError("Selected product does not exist.")
+
+            old_qty = p["remaining_quantity"]
+            old_price = p["unit_price"]
+
+            new_qty = old_qty + qty
+
+            average = (
+                (old_qty * old_price) + (qty * price)
+            ) / new_qty
+
+            total = qty * price
+
+            db.execute("""
+                UPDATE stock
+                SET remaining_quantity=?, unit_price=?
+                WHERE id=?
+            """, (new_qty, average, pid))
+
+            db.execute("""
+                INSERT INTO deliveries(
+                    stock_id,item,quantity_received,
+                    buying_price,total_cost,delivery_date
+                )
+                VALUES(?,?,?,?,?,?)
+            """, (
+                pid,
+                p["item"],
+                qty,
+                price,
+                total,
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            ))
+
+            db.commit()
+
+            flash(
+                "Delivery recorded and stock updated.",
+                "success"
+            )
+
+            return redirect(url_for("deliveries"))
+
+        except ValueError as exc:
+            db.rollback()
+            flash(str(exc), "error")
+
+    return page("Record delivery", body, products=products)
+
+# ==================== EXPENSES ====================
+
+@app.route("/expenses", methods=["GET", "POST"])
+@admin_required
+def expenses():
+
+    db = get_db()
+
+    if request.method == "POST":
+
+        try:
+            desc = request.form.get("description", "").strip()
+
+            if not desc:
+                raise ValueError("Enter an expense description.")
+
+            amount = number("amount", 0.01)
+
+            expense_date = (
+                request.form.get("expense_date")
+                or date.today().isoformat()
+            )
+
+            datetime.strptime(expense_date, "%Y-%m-%d")
+
+            db.execute("""
+                INSERT INTO expenses(description,amount,expense_date)
+                VALUES(?,?,?)
+            """, (desc, amount, expense_date))
+
+            db.commit()
+
+            flash("Expense recorded.", "success")
+
+            return redirect(url_for("expenses"))
+
+        except ValueError as exc:
+            flash(str(exc), "error")
+
+    rows = db.execute("""
+        SELECT * FROM expenses
+        ORDER BY expense_date DESC,id DESC LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Business expenses</h1>
+
+    <div class="panel">
+        <h2>Record expense</h2>
+
+        <form method="post">
+
+            <label>Description</label>
+            <input name="description" required>
+
+            <label>Amount (UGX)</label>
+            <input type="number" name="amount"
+                   min="0.01" step="0.01" required>
+
+            <label>Date</label>
+            <input type="date" name="expense_date"
+                   value="{{ today }}" required>
+
+            <button class="btn">Save expense</button>
+
+        </form>
+    </div>
+
+    <div class="table-wrap">
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+        </tr>
+
+        {% for r in rows %}
+        <tr>
+            <td>{{ r.expense_date }}</td>
+            <td>{{ r.description }}</td>
+            <td>{{ money(r.amount) }}</td>
+        </tr>
+
+        {% else %}
+        <tr><td colspan="3">No expenses recorded.</td></tr>
+        {% endfor %}
+
+    </table>
+    </div>
+    """
+
+    return page(
+        "Expenses",
+        body,
+        rows=rows,
+        today=date.today().isoformat()
+    )
+
+# ==================== REPORTS ====================
+
+@app.route("/reports")
+@admin_required
+def reports():
+
+    db = get_db()
+
+    daily = db.execute("""
+        SELECT COUNT(*) transactions,
+        COALESCE(SUM(revenue),0) revenue,
+        COALESCE(SUM(cost),0) cost,
+        COALESCE(SUM(profit_loss),0) profit
+        FROM sales
+        WHERE date(sale_date)=date('now','localtime')
+    """).fetchone()
+
+    monthly = db.execute("""
+        SELECT COUNT(*) transactions,
+        COALESCE(SUM(revenue),0) revenue,
+        COALESCE(SUM(cost),0) cost,
+        COALESCE(SUM(profit_loss),0) profit
+        FROM sales
+        WHERE strftime('%Y-%m',sale_date)=strftime('%Y-%m','now','localtime')
+    """).fetchone()
+
+    expenses_total = db.execute("""
+        SELECT COALESCE(SUM(amount),0) total
+        FROM expenses
+    """).fetchone()["total"]
+
+    low = db.execute("""
+        SELECT * FROM stock
+        WHERE remaining_quantity<=low_stock_level
+        ORDER BY remaining_quantity
+    """).fetchall()
+
+    body = """
+    <h1>Financial and stock reports</h1>
+
+    <div class="grid">
+
+        <div class="card">
+            <h2>Today's sales</h2>
+            Transactions: {{ d.transactions }}
+            <p>Revenue: <b>{{ money(d.revenue) }}</b></p>
+            <p>Cost: {{ money(d.cost) }}</p>
+            <p>Gross profit/loss: {{ money(d.profit) }}</p>
+        </div>
+
+        <div class="card">
+            <h2>This month's sales</h2>
+            Transactions: {{ m.transactions }}
+            <p>Revenue: <b>{{ money(m.revenue) }}</b></p>
+            <p>Cost: {{ money(m.cost) }}</p>
+            <p>Gross profit/loss: {{ money(m.profit) }}</p>
+        </div>
+
+        <div class="card">
+            <h2>All recorded expenses</h2>
+            <div class="metric">{{ money(expenses_total) }}</div>
+            <p class="muted">
+                Overall net result = gross sales profit/loss
+                minus all recorded expenses.
+            </p>
+        </div>
+
+    </div>
+
+    <div class="panel">
+        <h2>Low-stock report</h2>
+
+        <div class="table-wrap">
+        <table>
+
+            <tr>
+                <th>Product</th>
+                <th>Available</th>
+                <th>Alert level</th>
+                <th>Status</th>
+            </tr>
+
+            {% for p in low %}
+            <tr>
+                <td>{{ p.item }}</td>
+                <td>{{ p.remaining_quantity }}</td>
+                <td>{{ p.low_stock_level }}</td>
+                <td>
+                    {% if p.remaining_quantity==0 %}
+                        OUT OF STOCK
+                    {% else %}
+                        LOW STOCK
+                    {% endif %}
+                </td>
+            </tr>
+
+            {% else %}
+            <tr><td colspan="4">No low-stock alerts.</td></tr>
+            {% endfor %}
+
+        </table>
+        </div>
+    </div>
+
+    <div class="actions">
+        <a class="btn" href="/sales">Full sales history</a>
+        <a class="btn" href="/deliveries">Delivery history</a>
+        <a class="btn" href="/expenses">Expense history</a>
+    </div>
+    """
+
+    return page(
+        "Reports",
+        body,
+        d=daily,
+        m=monthly,
+        expenses_total=expenses_total,
+        low=low
+    )
+
+# ==================== CHANGE PASSWORD ====================
+
+@app.route("/admin/password", methods=["GET", "POST"])
+@admin_required
+def change_password():
+
+    body = """
+    <div class="panel">
+        <h1>Change administrator password</h1>
+
+        <form method="post">
+
+            <label>Current password</label>
+            <input type="password" name="old" required>
+
+            <label>New password (at least 8 characters)</label>
+            <input type="password" name="new"
+                   minlength="8" required>
+
+            <label>Confirm new password</label>
+            <input type="password" name="confirm"
+                   minlength="8" required>
+
+            <button class="btn">Change password</button>
+
+        </form>
+    </div>
+    """
+
+    if request.method == "POST":
+
+        db = get_db()
+
+        row = db.execute(
+            "SELECT * FROM admin WHERE id=1"
+        ).fetchone()
+
+        new = request.form.get("new", "")
+
+        if not row or not password_matches(
+            row,
+            request.form.get("old", "")
+        ):
+            flash("Current password is incorrect.", "error")
+
+        elif len(new) < 8 or new != request.form.get("confirm", ""):
+            flash(
+                "New passwords must match and contain at least 8 characters.",
+                "error"
+            )
+
+        else:
+            admin_cols = {
+                r["name"]
+                for r in db.execute(
+                    "PRAGMA table_info(admin)"
+                ).fetchall()
+            }
+
+            if "salt" in admin_cols:
+                db.execute("""
+                    UPDATE admin
+                    SET password_hash=?, salt=''
+                    WHERE id=1
+                """, (generate_password_hash(new),))
+            else:
+                db.execute("""
+                    UPDATE admin
+                    SET password_hash=?
+                    WHERE id=1
+                """, (generate_password_hash(new),))
+
+            db.commit()
+
+            flash(
+                "Administrator password changed.",
+                "success"
+            )
+
+            return redirect(url_for("dashboard"))
+
+    return page("Change password", body)
+
+# ==================== ERROR HANDLING ====================
+
+@app.errorhandler(404)
+def not_found(error):
+
+    return page(
+        "Page not found",
+        """
+        <div class='panel'>
+            <h1>Page not found</h1>
+            <p>The requested page does not exist.</p>
+            <a class='btn' href='/'>Home</a>
+        </div>
+        """
+    ), 404
+
+@app.errorhandler(500)
+def server_error(error):
+
+    app.logger.exception("Unexpected server error")
+
+    return page(
+        "Server error",
+        """
+        <div class='panel'>
+            <h1>Something went wrong</h1>
+            <p>Check the Render logs for the detailed error.</p>
+        </div>
+        """
+    ), 500
+
+# ==================== START APPLICATION ====================
+
+if __name__ == "__main__":
+
+    port = int(os.environ.get("PORT", 10000))
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
