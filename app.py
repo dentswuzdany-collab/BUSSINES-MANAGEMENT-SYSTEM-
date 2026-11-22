@@ -1,6 +1,7 @@
 
 import os
-import sqlite3
+import psycopg
+from psycopg.rows import dict_row
 import hashlib
 import hmac
 from functools import wraps
