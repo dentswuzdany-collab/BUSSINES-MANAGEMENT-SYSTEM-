@@ -58,7 +58,8 @@ CREATE TABLE IF NOT EXISTS expenses (
     amount REAL NOT NULL,
     expense_date TEXT NOT NULL
 )
-""")cursor.execute("""
+""")
+cursor.execute("""
 CREATE TABLE IF NOT EXISTS admin (
     id INTEGER PRIMARY KEY,
     password_hash TEXT NOT NULL,
