@@ -1360,19 +1360,46 @@ def home():
 @app.route("/dashboard")
 def dashboard():
 
+
     conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
-    cursor.execute(
-        "SELECT name FROM sqlite_master WHERE type='table'"
-    )
+    cursor.execute("""
+        SELECT
+            COUNT(*),
+            COALESCE(SUM(remaining_quantity), 0),
+            COALESCE(SUM(remaining_quantity * unit_price), 0)
+        FROM stock
+    """)
+    stock = cursor.fetchone()
 
-    tables = [row["name"] for row in cursor.fetchall()]
+    cursor.execute("""
+        SELECT
+            COALESCE(SUM(revenue), 0),
+            COALESCE(SUM(profit_loss), 0),
+            COUNT(*)
+        FROM sales
+    """)
+    sales = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT COALESCE(SUM(amount), 0)
+        FROM expenses
+    """)
+    expenses = cursor.fetchone()[0]
+
+    cursor.execute("""
+        SELECT COUNT(*)
+        FROM stock
+        WHERE remaining_quantity <= low_stock_level
+    """)
+    low_stock = cursor.fetchone()[0]
 
     conn.close()
 
-    return """
+    net_profit = sales[1] - expenses
+
+    return f"""
     <!DOCTYPE html>
     <html>
     <head>
@@ -1380,44 +1407,116 @@ def dashboard():
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <style>
-            body {
+            body {{
                 font-family: Arial, sans-serif;
                 background: #f1f5f9;
-                text-align: center;
-                padding: 30px;
-            }
+                margin: 0;
+                padding: 20px;
+            }}
 
-            .card {
-                background: white;
+            header {{
+                background: #123456;
+                color: white;
                 padding: 25px;
-                margin: 20px auto;
-                max-width: 500px;
+                text-align: center;
+                border-radius: 12px;
+            }}
+
+            .container {{
+                display: grid;
+                grid-template-columns:
+                    repeat(auto-fit, minmax(220px, 1fr));
+                gap: 15px;
+                margin-top: 25px;
+            }}
+
+            .card {{
+                background: white;
+                padding: 22px;
                 border-radius: 12px;
                 box-shadow: 0 3px 10px #ccc;
-            }
+            }}
+
+            .card h3 {{
+                color: #475569;
+                font-size: 16px;
+            }}
+
+            .card p {{
+                color: #123456;
+                font-size: 22px;
+                font-weight: bold;
+                overflow-wrap: anywhere;
+            }}
+
+            .warning {{
+                color: #dc2626 !important;
+            }}
         </style>
     </head>
 
     <body>
 
-        <div class="card">
-            <h1>Business Management Dashboard</h1>
+        <header>
+            <h1>BUSINESS MANAGEMENT SYSTEM</h1>
+            <p>Business Performance Dashboard</p>
+        </header>
 
-            <p>Your dashboard route is working!</p>
+        <div class="container">
 
-            <h3>Database Connection Successful</h3>
+            <div class="card">
+                <h3>Registered Products</h3>
+                <p>{stock[0]}</p>
+            </div>
 
-            <p>Registered database tables:</p>
-            <ul>
-    """ + "".join(
-        f"<li>{table}</li>" for table in tables
-    ) + """
-            </ul>
+            <div class="card">
+                <h3>Available Stock Units</h3>
+                <p>{stock[1]}</p>
+            </div>
+
+            <div class="card">
+                <h3>Current Stock Value</h3>
+                <p>UGX {stock[2]:,.2f}</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Sales Revenue</h3>
+                <p>UGX {sales[0]:,.2f}</p>
+            </div>
+
+            <div class="card">
+                <h3>Gross Profit / Loss</h3>
+                <p>UGX {sales[1]:,.2f}</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Business Expenses</h3>
+                <p>UGX {expenses:,.2f}</p>
+            </div>
+
+            <div class="card">
+                <h3>Net Profit / Loss</h3>
+                <p>UGX {net_profit:,.2f}</p>
+            </div>
+
+            <div class="card">
+                <h3>Sales Transactions</h3>
+                <p>{sales[2]}</p>
+            </div>
+
+            <div class="card">
+                <h3>Low Stock Alerts</h3>
+                <p class="warning">{low_stock}</p>
+            </div>
+
         </div>
 
     </body>
     </html>
     """
+
+
+    
 
 
 # ==========================================
