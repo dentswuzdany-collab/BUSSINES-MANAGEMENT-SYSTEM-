@@ -262,3 +262,1675 @@ def page(title, body, **context):
 
 # ==================== WEBSITE DESIGN ====================
 
+BASE = r"""
+<!doctype html>
+<html lang="en">
+
+<head>
+
+<meta charset="utf-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1">
+
+<title>{{ title }} | Business Management System</title>
+
+<style>
+
+:root {
+    --navy: #102a43;
+    --blue: #1769aa;
+    --bg: #f3f6fa;
+    --ink: #243447;
+    --muted: #66788a;
+    --line: #e3eaf1;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    font-family: Arial, sans-serif;
+    color: var(--ink);
+}
+
+header {
+    background: var(--navy);
+    color: white;
+    padding: 18px 4%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+header a {
+    color: white;
+    text-decoration: none;
+    margin-left: 12px;
+}
+
+.brand {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+nav {
+    background: white;
+    padding: 12px 4%;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+nav a, .btn {
+    display: inline-block;
+    background: var(--blue);
+    color: white;
+    text-decoration: none;
+    border: 0;
+    border-radius: 7px;
+    padding: 10px 13px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+nav a {
+    background: #eaf2fa;
+    color: #17476d;
+}
+
+.wrap {
+    max-width: 1150px;
+    margin: 25px auto;
+    padding: 0 16px;
+}
+
+h1 {
+    font-size: 25px;
+    margin: 0 0 18px;
+}
+
+h2 {
+    font-size: 19px;
+    margin-top: 0;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(
+        auto-fit,
+        minmax(190px, 1fr)
+    );
+    gap: 14px;
+}
+
+.card, .panel {
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 3px 12px #102a430b;
+    margin-bottom: 16px;
+}
+
+.metric {
+    font-size: 23px;
+    font-weight: bold;
+    color: var(--navy);
+    margin-top: 8px;
+}
+
+.muted {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+form {
+    display: grid;
+    gap: 12px;
+    max-width: 650px;
+}
+
+label {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5df;
+    border-radius: 7px;
+    font-size: 15px;
+    background: white;
+}
+
+button {
+    font: inherit;
+}
+
+.btn {
+    width: max-content;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    text-align: left;
+    padding: 11px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+}
+
+th {
+    background: #edf3f8;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border-radius: 9px;
+}
+
+.alert {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: #e8f2ff;
+}
+
+.alert.error {
+    background: #ffeded;
+    color: #9b1c1c;
+}
+
+.alert.success {
+    background: #e8f7ee;
+    color: #17643a;
+}
+
+.alert.warning {
+    background: #fff5dc;
+    color: #795500;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 12px 0;
+}
+
+@media(max-width:600px) {
+
+    header {
+        align-items: flex-start;
+    }
+
+    nav a {
+        font-size: 12px;
+        padding: 9px;
+    }
+
+    .wrap {
+        margin: 18px auto;
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 12px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<div class="brand">
+BUSINESS MANAGEMENT SYSTEM
+</div>
+
+<div>
+
+{% if logged_in %}
+
+<span>Administrator</span>
+
+<a href="{{ url_for('logout') }}">Sign out</a>
+
+{% else %}
+
+<a href="{{ url_for('login') }}">Admin sign in</a>
+
+{% endif %}
+
+</div>
+
+</header>
+
+{% if logged_in %}
+
+<nav>
+
+<a href="{{ url_for('dashboard') }}">Dashboard</a>
+<a href="{{ url_for('inventory') }}">Inventory</a>
+<a href="{{ url_for('add_product') }}">Add product</a>
+<a href="{{ url_for('record_sale') }}">Record sale</a>
+<a href="{{ url_for('sales_history') }}">Sales history</a>
+<a href="{{ url_for('deliveries') }}">Deliveries</a>
+<a href="{{ url_for('expenses') }}">Expenses</a>
+<a href="{{ url_for('reports') }}">Reports</a>
+<a href="{{ url_for('change_password') }}">Password</a>
+
+</nav>
+
+{% endif %}
+
+<div class="wrap">
+
+{% with messages=get_flashed_messages(with_categories=true) %}
+
+{% for category,message in messages %}
+
+<div class="alert {{ category }}">
+{{ message }}
+</div>
+
+{% endfor %}
+
+{% endwith %}
+
+{{ body|safe }}
+
+</div>
+
+</body>
+</html>
+"""
+
+
+# ============================================================
+# HOME PAGE
+# ============================================================
+
+@app.route("/")
+def home():
+
+    stats = get_db().execute("""
+        SELECT
+            COUNT(*) AS products,
+            COALESCE(SUM(remaining_quantity),0) AS units
+        FROM stock
+    """).fetchone()
+
+    body = """
+    <div class="panel">
+
+        <h1>Welcome to your Business Management System</h1>
+
+        <p>
+        Manage stock, sales, deliveries, expenses
+        and business performance from one place.
+        </p>
+
+        <p>
+        <b>Registered products:</b> {{ products }}
+        &nbsp;
+        <b>Units in stock:</b> {{ units }}
+        </p>
+
+        {% if logged_in %}
+
+        <a class="btn" href="{{ url_for('dashboard') }}">
+        Open dashboard
+        </a>
+
+        {% else %}
+
+        <a class="btn" href="{{ url_for('login') }}">
+        Administrator sign in
+        </a>
+
+        {% endif %}
+
+    </div>
+    """
+
+    return page(
+        "Home",
+        body,
+        products=stats["products"],
+        units=stats["units"]
+    )
+
+
+# ============================================================
+# ADMINISTRATOR SETUP
+# ===========================================================
+
+@app.route("/setup", methods=["GET", "POST"])
+def setup():
+
+    db = get_db()
+
+    exists = db.execute(
+        "SELECT 1 FROM admin WHERE id=1"
+    ).fetchone()
+
+    if exists:
+
+        return page(
+            "Setup",
+            """
+            <div class='panel'>
+                <h1>Administrator already configured</h1>
+                <a class='btn' href='/login'>Sign in</a>
+            </div>
+            """
+        )
+
+    body = """
+    <div class="panel">
+
+        <h1>Create administrator account</h1>
+
+        <p>
+        Use this page only for the first setup.
+        Choose a strong password of at least 8 characters.
+        </p>
+
+        <form method="post">
+
+            <label>New password</label>
+
+            <input type="password"
+                   name="password"
+                   minlength="8"
+                   required>
+
+            <label>Confirm password</label>
+
+            <input type="password"
+                   name="confirm"
+                   minlength="8"
+                   required>
+
+            <button class="btn">
+            Create administrator
+            </button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        password = request.form.get("password", "")
+
+        if (
+            len(password) < 8
+            or password != request.form.get("confirm", "")
+        ):
+
+            flash(
+                "Passwords must match and contain at least 8 characters.",
+                "error"
+            )
+
+        else:
+
+            try:
+
+                db.execute("""
+                    INSERT INTO admin(id,password_hash,salt)
+                    VALUES(1,%s,NULL)
+                """, (
+                    generate_password_hash(password),
+                ))
+
+                db.commit()
+
+                flash(
+                    "Administrator created. Please sign in.",
+                    "success"
+                )
+
+                return redirect(url_for("login"))
+
+            except psycopg.errors.UniqueViolation:
+
+                db.rollback()
+
+                flash(
+                    "An administrator account already exists.",
+                    "error"
+                )
+
+    return page("First-time setup", body)
+
+
+# ============================================================
+# ADMINISTRATOR LOGIN
+# ============================================================
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    body = """
+    <div class="panel">
+
+        <h1>Administrator sign in</h1>
+
+        <form method="post">
+
+            <label>Password</label>
+
+            <input type="password"
+                   name="password"
+                   required>
+
+            <button class="btn">Sign in</button>
+
+        </form>
+
+        <p class="muted">
+        First time here?
+        <a href="/setup">Create administrator account</a>.
+        </p>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        row = get_db().execute(
+            "SELECT * FROM admin WHERE id=1"
+        ).fetchone()
+
+        if row and password_matches(
+            row,
+            request.form.get("password", "")
+        ):
+
+            session.clear()
+            session.permanent = True
+            session["admin_id"] = 1
+
+            flash(
+                "Signed in successfully.",
+                "success"
+            )
+
+            destination = request.args.get("next")
+
+            if (
+                destination
+                and destination.startswith("/")
+                and not destination.startswith("//")
+            ):
+                return redirect(destination)
+
+            return redirect(url_for("dashboard"))
+
+        flash(
+            "Incorrect password, or administrator setup has not been completed.",
+            "error"
+        )
+
+    return page("Sign in", body)
+
+
+@app.route("/logout")
+def logout():
+
+    session.clear()
+
+    flash(
+        "You have signed out.",
+        "success"
+    )
+
+    return redirect(url_for("home"))
+
+
+# ============================================================
+# DASHBOARD
+# ============================================================
+
+@app.route("/dashboard")
+@admin_required
+def dashboard():
+
+    db = get_db()
+
+    stock = db.execute("""
+        SELECT
+            COUNT(*) AS products,
+            COALESCE(SUM(remaining_quantity),0) AS units,
+            COALESCE(
+                SUM(remaining_quantity * unit_price),0
+            ) AS value
+        FROM stock
+    """).fetchone()
+
+    sales = db.execute("""
+        SELECT
+            COALESCE(SUM(revenue),0) AS revenue,
+            COALESCE(SUM(cost),0) AS cost,
+            COALESCE(SUM(profit_loss),0) AS gross,
+            COUNT(*) AS transactions
+        FROM sales
+    """).fetchone()
+
+    expenses_total = db.execute("""
+        SELECT COALESCE(SUM(amount),0) AS total
+        FROM expenses
+    """).fetchone()["total"]
+
+    low = db.execute("""
+        SELECT COUNT(*) AS n
+        FROM stock
+        WHERE remaining_quantity <= low_stock_level
+    """).fetchone()["n"]
+
+    body = """
+    <h1>Business dashboard</h1>
+
+    <div class="grid">
+
+        <div class="card">
+            Registered products
+            <div class="metric">{{ s.products }}</div>
+        </div>
+
+        <div class="card">
+            Available stock units
+            <div class="metric">{{ s.units }}</div>
+        </div>
+
+        <div class="card">
+            Current stock value
+            <div class="metric">{{ money(s.value) }}</div>
+        </div>
+
+        <div class="card">
+            Total sales revenue
+            <div class="metric">{{ money(t.revenue) }}</div>
+        </div>
+
+        <div class="card">
+            Gross profit / loss
+            <div class="metric">{{ money(t.gross) }}</div>
+        </div>
+
+        <div class="card">
+            Business expenses
+            <div class="metric">{{ money(e) }}</div>
+        </div>
+
+        <div class="card">
+            Net profit / loss
+            <div class="metric">{{ money(t.gross-e) }}</div>
+        </div>
+
+        <div class="card">
+            Sales transactions
+            <div class="metric">{{ t.transactions }}</div>
+        </div>
+
+        <div class="card">
+            Low-stock alerts
+            <div class="metric">{{ low }}</div>
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <h2>Quick actions</h2>
+
+        <div class="actions">
+
+            <a class="btn" href="/products/add">Add product</a>
+
+            <a class="btn" href="/sales/add">Record sale</a>
+
+            <a class="btn" href="/deliveries/add">Record delivery</a>
+
+            <a class="btn" href="/expenses">Record expense</a>
+
+            <a class="btn" href="/reports">View reports</a>
+
+        </div>
+
+        <p class="muted">
+        Net profit shown here is gross sales profit/loss
+        less recorded expenses.
+        Stock value is an inventory asset, not profit.
+        </p>
+
+    </div>
+    """
+
+    return page(
+        "Dashboard",
+        body,
+        s=stock,
+        t=sales,
+        e=expenses_total,
+        low=low
+    )
+
+
+# ============================================================
+# INVENTORY
+# ============================================================
+
+@app.route("/inventory")
+@admin_required
+def inventory():
+
+    rows = get_db().execute("""
+        SELECT * FROM stock
+        ORDER BY item
+    """).fetchall()
+
+    body = """
+    <h1>Inventory</h1>
+
+    <div class="actions">
+        <a class="btn" href="/products/add">Add new product</a>
+    </div>
+
+    <div class="table-wrap">
+
+    <table>
+
+        <tr>
+            <th>ID</th>
+            <th>Product</th>
+            <th>Available</th>
+            <th>Buying price</th>
+            <th>Low-stock limit</th>
+            <th>Action</th>
+        </tr>
+
+        {% for r in rows %}
+
+        <tr>
+            <td>{{ r.id }}</td>
+            <td>{{ r.item }}</td>
+            <td>{{ r.remaining_quantity }}</td>
+            <td>{{ money(r.unit_price) }}</td>
+            <td>{{ r.low_stock_level }}</td>
+            <td>
+                <a href="/products/{{ r.id }}/edit">Edit</a>
+            </td>
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="6">No products have been added.</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    </div>
+    """
+
+    return page("Inventory", body, rows=rows)
+
+
+# ============================================================
+# ADD PRODUCT
+# ============================================================
+
+@app.route("/products/add", methods=["GET", "POST"])
+@admin_required
+def add_product():
+
+    body = """
+    <div class="panel">
+
+        <h1>Add product</h1>
+
+        <form method="post">
+
+            <label>Product name</label>
+            <input name="item" required>
+
+            <label>Quantity</label>
+            <input type="number" name="quantity" min="1" required>
+
+            <label>Buying price per unit (UGX)</label>
+            <input type="number" step="0.01"
+                   min="0" name="price" required>
+
+            <label>Low-stock alert level</label>
+            <input type="number" min="0"
+                   name="low" value="5" required>
+
+            <button class="btn">Save product</button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+
+            item = request.form.get("item", "").strip()
+
+            if not item:
+                raise ValueError("Product name is required.")
+
+            qty = number("quantity", 1, True)
+            price = number("price")
+            low = number("low", 0, True)
+
+            db = get_db()
+
+            db.execute("""
+                INSERT INTO stock(
+                    item,
+                    initial_quantity,
+                    unit_price,
+                    total_amount,
+                    remaining_quantity,
+                    date_added,
+                    low_stock_level
+                )
+                VALUES(%s,%s,%s,%s,%s,%s,%s)
+            """, (
+                item,
+                qty,
+                price,
+                qty * price,
+                qty,
+                local_now().strftime("%Y-%m-%d %H:%M:%S"),
+                low
+            ))
+
+            db.commit()
+
+            flash(
+                "Product added successfully.",
+                "success"
+            )
+
+            return redirect(url_for("inventory"))
+
+        except ValueError as exc:
+
+            flash(str(exc), "error")
+
+    return page("Add product", body)
+
+
+# ============================================================
+# EDIT PRODUCT
+# ============================================================
+
+@app.route(
+    "/products/<int:product_id>/edit",
+    methods=["GET", "POST"]
+)
+@admin_required
+def edit_product(product_id):
+
+    db = get_db()
+
+    product = db.execute(
+        "SELECT * FROM stock WHERE id=%s",
+        (product_id,)
+    ).fetchone()
+
+    if not product:
+        abort(404)
+
+    body = """
+    <div class="panel">
+
+        <h1>Edit product</h1>
+
+        <form method="post">
+
+            <label>Product name</label>
+
+            <input name="item"
+                   value="{{ p.item }}"
+                   required>
+
+            <label>Buying price per unit (UGX)</label>
+
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="price"
+                   value="{{ p.unit_price }}"
+                   required>
+
+            <label>Low-stock alert level</label>
+
+            <input type="number"
+                   min="0"
+                   name="low"
+                   value="{{ p.low_stock_level }}"
+                   required>
+
+            <button class="btn">Update product</button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+
+            item = request.form.get("item", "").strip()
+
+            if not item:
+                raise ValueError("Product name is required.")
+
+            price = number("price")
+            low = number("low", 0, True)
+
+            db.execute("""
+                UPDATE stock
+                SET
+                    item=%s,
+                    unit_price=%s,
+                    total_amount=initial_quantity * %s,
+                    low_stock_level=%s
+                WHERE id=%s
+            """, (
+                item,
+                price,
+                price,
+                low,
+                product_id
+            ))
+
+            db.commit()
+
+            flash("Product updated.", "success")
+
+            return redirect(url_for("inventory"))
+
+        except ValueError as exc:
+
+            flash(str(exc), "error")
+
+    return page("Edit product", body, p=product)
+
+
+# ============================================================
+# RECORD SALES
+# ============================================================
+
+@app.route("/sales/add", methods=["GET", "POST"])
+@admin_required
+def record_sale():
+
+    db = get_db()
+
+    products = db.execute("""
+        SELECT id,item,remaining_quantity,unit_price
+        FROM stock
+        ORDER BY item
+    """).fetchall()
+
+    body = """
+    <div class="panel">
+
+        <h1>Record sale</h1>
+
+        <form method="post">
+
+            <label>Product</label>
+
+            <select name="stock_id" required>
+
+                {% for p in products %}
+
+                <option value="{{ p.id }}">
+
+                    {{ p.item }} —
+                    {{ p.remaining_quantity }} available —
+                    {{ money(p.unit_price) }} buying price
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <label>Quantity sold</label>
+
+            <input type="number"
+                   name="quantity"
+                   min="1"
+                   required>
+
+            <label>Selling price per unit (UGX)</label>
+
+            <input type="number"
+                   name="selling_price"
+                   min="0"
+                   step="0.01"
+                   required>
+
+            <button class="btn">Save sale</button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+
+            pid = number("stock_id", 1, True)
+            qty = number("quantity", 1, True)
+            sell = number("selling_price")
+
+            with db.transaction():
+
+                product = db.execute("""
+                    SELECT *
+                    FROM stock
+                    WHERE id=%s
+                    FOR UPDATE
+                """, (pid,)).fetchone()
+
+                if not product:
+                    raise ValueError(
+                        "Selected product does not exist."
+                    )
+
+                if qty > product["remaining_quantity"]:
+
+                    raise ValueError(
+                        f"Only {product['remaining_quantity']} "
+                        "units are available."
+                    )
+
+                buy = float(product["unit_price"])
+
+                revenue = qty * sell
+                cost = qty * buy
+
+                db.execute("""
+                    UPDATE stock
+                    SET remaining_quantity =
+                    remaining_quantity - %s
+                    WHERE id=%s
+                """, (qty, pid))
+
+                db.execute("""
+                    INSERT INTO sales(
+                        stock_id,
+                        item,
+                        quantity_sold,
+                        buying_price,
+                        selling_price,
+                        revenue,
+                        cost,
+                        profit_loss,
+                        sale_date
+                    )
+                    VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                """, (
+                    pid,
+                    product["item"],
+                    qty,
+                    buy,
+                    sell,
+                    revenue,
+                    cost,
+                    revenue - cost,
+                    local_now().strftime("%Y-%m-%d %H:%M:%S")
+                ))
+
+            # Commit the complete transaction.
+            db.commit()
+
+            flash(
+                f"Sale saved. Revenue {money(revenue)}; "
+                f"profit/loss {money(revenue-cost)}.",
+                "success"
+            )
+
+            return redirect(url_for("sales_history"))
+
+        except ValueError as exc:
+
+            flash(str(exc), "error")
+
+    return page("Record sale", body, products=products)
+
+
+# ============================================================
+# SALES HISTORY
+# ============================================================
+
+@app.route("/sales")
+@admin_required
+def sales_history():
+
+    rows = get_db().execute("""
+        SELECT *
+        FROM sales
+        ORDER BY id DESC
+        LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Sales history</h1>
+
+    <div class="table-wrap">
+
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Revenue</th>
+            <th>Cost</th>
+            <th>Profit / loss</th>
+        </tr>
+
+        {% for r in rows %}
+
+        <tr>
+
+            <td>{{ r.sale_date }}</td>
+            <td>{{ r.item }}</td>
+            <td>{{ r.quantity_sold }}</td>
+            <td>{{ money(r.revenue) }}</td>
+            <td>{{ money(r.cost) }}</td>
+            <td>{{ money(r.profit_loss) }}</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="6">No sales recorded.</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    </div>
+    """
+
+    return page("Sales history", body, rows=rows)
+
+
+# ============================================================
+# STOCK DELIVERIES
+# ============================================================
+
+@app.route("/deliveries")
+@admin_required
+def deliveries():
+
+    rows = get_db().execute("""
+        SELECT *
+        FROM deliveries
+        ORDER BY id DESC
+        LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Stock delivery history</h1>
+
+    <a class="btn" href="/deliveries/add">
+        Record delivery
+    </a>
+
+    <div class="table-wrap">
+
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Buying price</th>
+            <th>Total cost</th>
+        </tr>
+
+        {% for r in rows %}
+
+        <tr>
+
+            <td>{{ r.delivery_date }}</td>
+            <td>{{ r.item }}</td>
+            <td>{{ r.quantity_received }}</td>
+            <td>{{ money(r.buying_price) }}</td>
+            <td>{{ money(r.total_cost) }}</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="5">No deliveries recorded.</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    </div>
+    """
+
+    return page("Deliveries", body, rows=rows)
+
+
+@app.route("/deliveries/add", methods=["GET", "POST"])
+@admin_required
+def add_delivery():
+
+    db = get_db()
+
+    products = db.execute("""
+        SELECT id,item,remaining_quantity,unit_price
+        FROM stock
+        ORDER BY item
+    """).fetchall()
+
+    body = """
+    <div class="panel">
+
+        <h1>Record stock delivery</h1>
+
+        <form method="post">
+
+            <label>Product</label>
+
+            <select name="stock_id" required>
+
+                {% for p in products %}
+
+                <option value="{{ p.id }}">
+
+                    {{ p.item }} —
+                    current stock {{ p.remaining_quantity }}
+
+                </option>
+
+                {% endfor %}
+
+            </select>
+
+            <label>Quantity received</label>
+
+            <input type="number"
+                   name="quantity"
+                   min="1"
+                   required>
+
+            <label>Buying price per delivered unit (UGX)</label>
+
+            <input type="number"
+                   step="0.01"
+                   min="0"
+                   name="price"
+                   required>
+
+            <button class="btn">Save delivery</button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        try:
+
+            pid = number("stock_id", 1, True)
+            qty = number("quantity", 1, True)
+            price = number("price")
+
+            with db.transaction():
+
+                product = db.execute("""
+                    SELECT *
+                    FROM stock
+                    WHERE id=%s
+                    FOR UPDATE
+                """, (pid,)).fetchone()
+
+                if not product:
+
+                    raise ValueError(
+                        "Selected product does not exist."
+                    )
+
+                old_qty = product["remaining_quantity"]
+                old_price = float(product["unit_price"])
+
+                new_qty = old_qty + qty
+
+                average = (
+                    (old_qty * old_price) + (qty * price)
+                ) / new_qty
+
+                db.execute("""
+                    UPDATE stock
+                    SET
+                        remaining_quantity=%s,
+                        unit_price=%s,
+                        total_amount=initial_quantity * %s
+                    WHERE id=%s
+                """, (
+                    new_qty,
+                    average,
+                    average,
+                    pid
+                ))
+
+                db.execute("""
+                    INSERT INTO deliveries(
+                        stock_id,
+                        item,
+                        quantity_received,
+                        buying_price,
+                        total_cost,
+                        delivery_date
+                    )
+                    VALUES(%s,%s,%s,%s,%s,%s)
+                """, (
+                    pid,
+                    product["item"],
+                    qty,
+                    price,
+                    qty * price,
+                    local_now().strftime("%Y-%m-%d %H:%M:%S")
+                ))
+
+            db.commit()
+
+            flash(
+                "Delivery recorded and stock updated.",
+                "success"
+            )
+
+            return redirect(url_for("deliveries"))
+
+        except ValueError as exc:
+
+            flash(str(exc), "error")
+
+    return page(
+        "Record delivery",
+        body,
+        products=products
+    )
+
+
+# ============================================================
+# BUSINESS EXPENSES
+# ============================================================
+
+@app.route("/expenses", methods=["GET", "POST"])
+@admin_required
+def expenses():
+
+    db = get_db()
+
+    if request.method == "POST":
+
+        try:
+
+            desc = request.form.get(
+                "description", ""
+            ).strip()
+
+            if not desc:
+                raise ValueError(
+                    "Enter an expense description."
+                )
+
+            amount = number("amount", 0.01)
+
+            expense_date = (
+                request.form.get("expense_date")
+                or local_today().isoformat()
+            )
+
+            datetime.strptime(
+                expense_date,
+                "%Y-%m-%d"
+            )
+
+            db.execute("""
+                INSERT INTO expenses(
+                    description,
+                    amount,
+                    expense_date
+                )
+                VALUES(%s,%s,%s)
+            """, (
+                desc,
+                amount,
+                expense_date
+            ))
+
+            db.commit()
+
+            flash(
+                "Expense recorded.",
+                "success"
+            )
+
+            return redirect(url_for("expenses"))
+
+        except ValueError as exc:
+
+            flash(str(exc), "error")
+
+    rows = db.execute("""
+        SELECT *
+        FROM expenses
+        ORDER BY expense_date DESC,id DESC
+        LIMIT 300
+    """).fetchall()
+
+    body = """
+    <h1>Business expenses</h1>
+
+    <div class="panel">
+
+        <h2>Record expense</h2>
+
+        <form method="post">
+
+            <label>Description</label>
+
+            <input name="description" required>
+
+            <label>Amount (UGX)</label>
+
+            <input type="number"
+                   name="amount"
+                   min="0.01"
+                   step="0.01"
+                   required>
+
+            <label>Date</label>
+
+            <input type="date"
+                   name="expense_date"
+                   value="{{ today }}"
+                   required>
+
+            <button class="btn">Save expense</button>
+
+        </form>
+
+    </div>
+
+    <div class="table-wrap">
+
+    <table>
+
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+        </tr>
+
+        {% for r in rows %}
+
+        <tr>
+
+            <td>{{ r.expense_date }}</td>
+            <td>{{ r.description }}</td>
+            <td>{{ money(r.amount) }}</td>
+
+        </tr>
+
+        {% else %}
+
+        <tr>
+            <td colspan="3">No expenses recorded.</td>
+        </tr>
+
+        {% endfor %}
+
+    </table>
+
+    </div>
+    """
+
+    return page(
+        "Expenses",
+        body,
+        rows=rows,
+        today=local_today().isoformat()
+    )
+
+
+# ============================================================
+# FINANCIAL AND STOCK REPORTS
+# ===========================================================
+
+@app.route("/reports")
+@admin_required
+def reports():
+
+    db = get_db()
+
+    today_text = local_today().isoformat()
+
+    month_text = local_today().strftime("%Y-%m")
+
+    daily = db.execute("""
+        SELECT
+            COUNT(*) AS transactions,
+            COALESCE(SUM(revenue),0) AS revenue,
+            COALESCE(SUM(cost),0) AS cost,
+            COALESCE(SUM(profit_loss),0) AS profit
+        FROM sales
+        WHERE LEFT(sale_date,10)=%s
+    """, (today_text,)).fetchone()
+
+    monthly = db.execute("""
+        SELECT
+            COUNT(*) AS transactions,
+            COALESCE(SUM(revenue),0) AS revenue,
+            COALESCE(SUM(cost),0) AS cost,
+            COALESCE(SUM(profit_loss),0) AS profit
+        FROM sales
+        WHERE LEFT(sale_date,7)=%s
+    """, (month_text,)).fetchone()
+
+    expenses_total = db.execute("""
+        SELECT COALESCE(SUM(amount),0) AS total
+        FROM expenses
+    """).fetchone()["total"]
+
+    low = db.execute("""
+        SELECT *
+        FROM stock
+        WHERE remaining_quantity <= low_stock_level
+        ORDER BY remaining_quantity
+    """).fetchall()
+
+    body = """
+    <h1>Financial and stock reports</h1>
+
+    <div class="grid">
+
+        <div class="card">
+
+            <h2>Today's sales</h2>
+
+            Transactions: {{ d.transactions }}
+
+            <p>
+                Revenue:
+                <b>{{ money(d.revenue) }}</b>
+            </p>
+
+            <p>Cost: {{ money(d.cost) }}</p>
+
+            <p>
+                Gross profit/loss:
+                {{ money(d.profit) }}
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>This month's sales</h2>
+
+            Transactions: {{ m.transactions }}
+
+            <p>
+                Revenue:
+                <b>{{ money(m.revenue) }}</b>
+            </p>
+
+            <p>Cost: {{ money(m.cost) }}</p>
+
+            <p>
+                Gross profit/loss:
+                {{ money(m.profit) }}
+            </p>
+
+        </div>
+
+        <div class="card">
+
+            <h2>All recorded expenses</h2>
+
+            <div class="metric">
+                {{ money(expenses_total) }}
+            </div>
+
+            <p class="muted">
+            Overall net result = gross sales profit/loss
+            minus all recorded expenses.
+            </p>
+
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <h2>Low-stock report</h2>
+
+        <div class="table-wrap">
+
+        <table>
+
+            <tr>
+                <th>Product</th>
+                <th>Available</th>
+                <th>Alert level</th>
+                <th>Status</th>
+            </tr>
+
+            {% for p in low %}
+
+            <tr>
+
+                <td>{{ p.item }}</td>
+
+                <td>{{ p.remaining_quantity }}</td>
+
+                <td>{{ p.low_stock_level }}</td>
+
+                <td>
+
+                {% if p.remaining_quantity == 0 %}
+
+                    OUT OF STOCK
+
+                {% else %}
+
+                    LOW STOCK
+
+                {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% else %}
+
+            <tr>
+                <td colspan="4">No low-stock alerts.</td>
+            </tr>
+
+            {% endfor %}
+
+        </table>
+
+        </div>
+
+    </div>
+
+    <div class="actions">
+
+        <a class="btn" href="/sales">
+        Full sales history
+        </a>
+
+        <a class="btn" href="/deliveries">
+        Delivery history
+        </a>
+
+        <a class="btn" href="/expenses">
+        Expense history
+        </a>
+
+    </div>
+    """
+
+    return page(
+        "Reports",
+        body,
+        d=daily,
+        m=monthly,
+        expenses_total=expenses_total,
+        low=low
+    )
+
+
+# ============================================================
+# CHANGE ADMINISTRATOR PASSWORD
+# ============================================================
+
