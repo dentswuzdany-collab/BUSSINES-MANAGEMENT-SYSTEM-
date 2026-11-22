@@ -1934,3 +1934,153 @@ def reports():
 # CHANGE ADMINISTRATOR PASSWORD
 # ============================================================
 
+@app.route(
+    "/admin/password",
+    methods=["GET", "POST"]
+)
+@admin_required
+def change_password():
+
+    body = """
+    <div class="panel">
+
+        <h1>Change administrator password</h1>
+
+        <form method="post">
+
+            <label>Current password</label>
+
+            <input type="password"
+                   name="old"
+                   required>
+
+            <label>New password (at least 8 characters)</label>
+
+            <input type="password"
+                   name="new"
+                   minlength="8"
+                   required>
+
+            <label>Confirm new password</label>
+
+            <input type="password"
+                   name="confirm"
+                   minlength="8"
+                   required>
+
+            <button class="btn">
+            Change password
+            </button>
+
+        </form>
+
+    </div>
+    """
+
+    if request.method == "POST":
+
+        db = get_db()
+
+        row = db.execute(
+            "SELECT * FROM admin WHERE id=1"
+        ).fetchone()
+
+        new = request.form.get("new", "")
+
+        if not row or not password_matches(
+            row,
+            request.form.get("old", "")
+        ):
+
+            flash(
+                "Current password is incorrect.",
+                "error"
+            )
+
+        elif (
+            len(new) < 8
+            or new != request.form.get("confirm", "")
+        ):
+
+            flash(
+                "New passwords must match and contain "
+                "at least 8 characters.",
+                "error"
+            )
+
+        else:
+
+            db.execute("""
+                UPDATE admin
+                SET password_hash=%s,salt=NULL
+                WHERE id=1
+            """, (
+                generate_password_hash(new),
+            ))
+
+            db.commit()
+
+            flash(
+                "Administrator password changed.",
+                "success"
+            )
+
+            return redirect(url_for("dashboard"))
+
+    return page("Change password", body)
+
+
+# ============================================================
+# ERROR HANDLING
+# ============================================================
+
+@app.errorhandler(404)
+def not_found(error):
+
+    return page(
+        "Page not found",
+        """
+        <div class='panel'>
+            <h1>Page not found</h1>
+            <p>The requested page does not exist.</p>
+            <a class='btn' href='/'>Home</a>
+        </div>
+        """
+    ), 404
+
+
+@app.errorhandler(500)
+def server_error(error):
+
+    app.logger.exception("Unexpected server error")
+
+    return page(
+        "Server error",
+        """
+        <div class='panel'>
+            <h1>Something went wrong</h1>
+            <p>
+            Check the Render logs for the detailed error.
+            </p>
+        </div>
+        """
+    ), 500
+
+
+# ============================================================
+# APPLICATION STARTUP
+# ============================================================
+
+with app.app_context():
+    init_db()
+
+
+if __name__ == "__main__":
+
+    port = int(os.environ.get("PORT", 10000))
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
