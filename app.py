@@ -1319,5 +1319,77 @@ def home():
     </body>
     </html>
     """
+
+# ==========================================
+# BUSINESS MANAGEMENT DASHBOARD
+# ==========================================
+
+@app.route("/dashboard")
+def dashboard():
+
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'"
+    )
+
+    tables = [row["name"] for row in cursor.fetchall()]
+
+    conn.close()
+
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Business Management Dashboard</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f1f5f9;
+                text-align: center;
+                padding: 30px;
+            }
+
+            .card {
+                background: white;
+                padding: 25px;
+                margin: 20px auto;
+                max-width: 500px;
+                border-radius: 12px;
+                box-shadow: 0 3px 10px #ccc;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <div class="card">
+            <h1>Business Management Dashboard</h1>
+
+            <p>Your dashboard route is working!</p>
+
+            <h3>Database Connection Successful</h3>
+
+            <p>Registered database tables:</p>
+            <ul>
+    """ + "".join(
+        f"<li>{table}</li>" for table in tables
+    ) + """
+            </ul>
+        </div>
+
+    </body>
+    </html>
+    """
+
+
+# ==========================================
+# APPLICATION ENTRY POINT
+# ==========================================
+
 if __name__ == "__main__":
     app.run(debug=True)
