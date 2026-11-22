@@ -75,6 +75,34 @@ CREATE TABLE IF NOT EXISTS deliveries (
 )
 """)
 
+
+# ==========================================
+# DATABASE CORRECTIONS
+# ==========================================
+
+# 1. CREATE EXPENSES TABLE
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    expense_date TEXT NOT NULL
+)
+""")
+
+# 2. CHECK WHETHER LOW STOCK COLUMN EXISTS
+cursor.execute("PRAGMA table_info(stock)")
+columns = [column[1] for column in cursor.fetchall()]
+
+# 3. ADD LOW STOCK COLUMN IF MISSING
+if "low_stock_level" not in columns:
+    cursor.execute("""
+    ALTER TABLE stock
+    ADD COLUMN low_stock_level INTEGER NOT NULL DEFAULT 5
+    """)
+
+# SAVE DATABASE CHANGES
+conn.commit()
 conn.commit()
 
 
