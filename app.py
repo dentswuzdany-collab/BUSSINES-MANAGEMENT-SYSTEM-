@@ -37,7 +37,28 @@ CREATE TABLE IF NOT EXISTS stock (
 )
 """)
 
+# Add missing low-stock column to existing databases
+columns = [
+    row[1] for row in cursor.execute(
+        "PRAGMA table_info(stock)"
+    ).fetchall()
+]
+
+if "low_stock_level" not in columns:
+    cursor.execute("""
+    ALTER TABLE stock
+    ADD COLUMN low_stock_level INTEGER NOT NULL DEFAULT 5
+    """)
+
+# Create business expenses table
 cursor.execute("""
+CREATE TABLE IF NOT EXISTS expenses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    description TEXT NOT NULL,
+    amount REAL NOT NULL,
+    expense_date TEXT NOT NULL
+)
+""")cursor.execute("""
 CREATE TABLE IF NOT EXISTS admin (
     id INTEGER PRIMARY KEY,
     password_hash TEXT NOT NULL,
