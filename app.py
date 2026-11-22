@@ -1271,25 +1271,7 @@ def main_menu():
 
 # ==========================================================
 # 19. PROGRAM STARTUP
-# ==========================================================
-
-if __name__ == "__main__":
-
-    try:
-
-        if not admin_exists():
-            create_admin()
-
-        main_menu()
-
-    except KeyboardInterrupt:
-        print("\n\nSystem interrupted.")
-
-    except sqlite3.Error as error:
-        print("\nDatabase error:", error)
-
-    finally:
-        conn.close()
+# =========================================================
 
 @app.route("/")
 def home():
