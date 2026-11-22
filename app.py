@@ -1,3 +1,8 @@
+from flask import Flask, request, redirect, url_for, session, render_template, flash
+
+app = Flask(__name__)
+
+app.secret_key = "change-this-to-a-long-random-secret-key"
 import sqlite3
 import hashlib
 import secrets
