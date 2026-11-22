@@ -1241,3 +1241,83 @@ if __name__ == "__main__":
 
     finally:
         conn.close()
+
+@app.route("/")
+def home():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Business Management System</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f1f5f9;
+                margin: 0;
+                text-align: center;
+            }
+
+            header {
+                background: #123456;
+                color: white;
+                padding: 35px 15px;
+            }
+
+            .container {
+                padding: 25px 15px;
+            }
+
+            .card {
+                background: white;
+                max-width: 500px;
+                margin: 20px auto;
+                padding: 25px;
+                border-radius: 12px;
+                box-shadow: 0 3px 10px #ccc;
+            }
+
+            .status {
+                color: green;
+                font-weight: bold;
+            }
+
+            footer {
+                padding: 20px;
+                color: #555;
+            }
+        </style>
+    </head>
+
+    <body>
+
+        <header>
+            <h1>BUSINESS MANAGEMENT SYSTEM</h1>
+            <p>Manage your business efficiently</p>
+        </header>
+
+        <div class="container">
+            <div class="card">
+                <h2>Welcome!</h2>
+
+                <p>
+                    Your Business Management System
+                    is now running successfully.
+                </p>
+
+                <p class="status">
+                    SYSTEM STATUS: ONLINE
+                </p>
+            </div>
+        </div>
+
+        <footer>
+            Business Management System
+        </footer>
+
+    </body>
+    </html>
+    """
+if __name__ == "__main__":
+    app.run(debug=True)
